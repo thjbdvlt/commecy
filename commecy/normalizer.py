@@ -18,7 +18,6 @@
 import spacy
 from spacy.lookups import Table
 import pkgutil
-import json
 from .commeci import normalize, dediacritic
 
 

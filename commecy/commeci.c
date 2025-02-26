@@ -188,7 +188,7 @@ reduce_repeated_letters_2(Py_UCS4* s, int len)
   int x;
   int i;
 
-  for (i = len; i > 1; i--) {
+  for (i = len; i >= 1; i--) {
     c = s[i];
 
     if (c == s[i - 1]) {
