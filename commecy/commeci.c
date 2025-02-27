@@ -148,7 +148,7 @@ is_incl_suff(Py_UCS4* s, int len, Py_UCS4 sep)
 
 /* qqquuuooooiiiiiiiii??? */
 int
-reduce_repeated_letters(Py_UCS4* s, int len)
+reduce_3_repeated_letters(Py_UCS4* s, int len)
 {
   Py_UCS4 c;
   int y;
@@ -179,9 +179,10 @@ reduce_repeated_letters(Py_UCS4* s, int len)
   return len;
 }
 
-/* qqquuuooooiiiiiiiii??? */
+/* this function does NOT replace reduce_2_repeated_letters, and is
+ * not replaced by it. it serves a different purpose. */
 int
-reduce_repeated_letters_2(Py_UCS4* s, int len)
+reduce_2_repeated_letters(Py_UCS4* s, int len)
 {
   Py_UCS4 c;
   int y;
@@ -206,7 +207,7 @@ reduce_repeated_letters_2(Py_UCS4* s, int len)
         y++;
       }
 
-      len = y - 1; // why -1?
+      len = y - 1;
     }
   }
   return len;
@@ -232,6 +233,9 @@ replace_chars(Py_UCS4* s, Py_UCS4* new, int len)
       case L']':
       case L'}':
       case L'{':
+        // do not remove parenthese when it's the only character
+        if (len == 1)
+          new[y++] = c;
         break;
 
       // jusqu'ici
@@ -324,12 +328,9 @@ normalize(PyObject* self, PyObject* arg)
 
   new = (Py_UCS4*)malloc(sizeof(Py_UCS4*) * ((size_t)len + 2) * 2);
   len = replace_chars(s, new, (int)len);
-  len = reduce_repeated_letters(new, (int)len);
+  len = reduce_3_repeated_letters(new, (int)len);
 
   /* create a new string and populate it with characters */
-  // ret = PyUnicode_New(len, 1114111);
-  // for (int i = 0; i < len; i++)
-  //   PyUnicode_WriteChar(ret, i, new[i]);
   ret = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, new, len);
 
   PyMem_FREE(s);
@@ -400,9 +401,10 @@ dediacritic_dedoubler(PyObject* self, PyObject* arg)
     new[i] = c;
   }
 
-  len = reduce_repeated_letters_2(new, len);
+  len = reduce_2_repeated_letters(new, len);
   ret = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, new, len);
-  free(new);
+  // free(new);
+  PyMem_FREE(new);
 
   return ret;
 }
