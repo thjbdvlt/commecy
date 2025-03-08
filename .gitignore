@@ -1,0 +1,15 @@
+*.bc
+*.egg-info
+*.o
+*.out
+*.so
+.suff_cache
+.tags
+.valgrind
+build
+compile_flags.txt
+venv
+__pycache__
+test.sh
+test.output
+get_words.sh
