@@ -1,7 +1,7 @@
 [project]
 name = "commecy"
 authors = [{name="thjbdvlt"}]
-version = "0.1.0"
+version = "0.1.1"
 description = "french words normalizer for spacy."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -19,6 +19,9 @@ import spacy
 from spacy.lookups import Table
 import pkgutil
 from .commeci import normalize, dediacritic
+from pathlib import Path
+from spacy import Language
+from spacy.tokens import Doc
 
 
 def _getdata(filename: str) -> list[str]:
@@ -30,8 +33,9 @@ def _getdata(filename: str) -> list[str]:
     Returns (list[str]): lines.
     """
 
+    fp = Path("data") / Path(filename)
     return (
-        pkgutil.get_data(__name__, f"data/{filename}")
+        pkgutil.get_data(__name__, str(fp))
         .decode()
         .strip()
         .split("\n")
@@ -39,14 +43,8 @@ def _getdata(filename: str) -> list[str]:
 
 
 class CommeCyNormalizer:
-    def __init__(self, nlp, name) -> None:
-        """Initialize a Normalizer.
-
-        Args:
-            nlp (Language)
-
-        Returns (None)
-        """
+    def __init__(self, nlp: Language, name: str) -> None:
+        """Initialize a Normalizer."""
 
         self.name = name
         self.table = Table()
@@ -67,27 +65,11 @@ class CommeCyNormalizer:
                 self.table_dedia.set(y, x)
 
     def add(self, norm: str, forms: list[str]) -> None:
-        """Associate a norm with a list of forms.
-
-        Args:
-            norm (str)
-            forms (list[str])
-
-        Returns (None)
-        """
-
+        """Associate a norm with a list of forms."""
         for i in forms:
             self.table.set(i, norm)
 
-    def normalize(self, s: str) -> None:
-        """Set the norm to a Token (i.e. to its Lexeme).
-
-        Args:
-            token (Token)
-
-        Returns (None)
-        """
-
+    def normalize(self, s: str) -> str:
         table = self.table
 
         # check if the form is registered as-is.
@@ -129,19 +111,9 @@ class CommeCyNormalizer:
         self.add(norm, [s, s_lower, s_norm, s_dedi])
         return norm
 
-    def normalize_compound(self, compound) -> str:
-        """Normalize each component of a compound word.
-
-        Args:
-            compound (str): the pre-normalized compound word.
-
-        Returns (str): the normalized compound word.
-        """
-
-        # split the compound into its parts
+    def normalize_compound(self, compound: str) -> str:
+        """Normalize each component of a compound word."""
         parts = compound.split("-")
-
-        # normalize each parts
         for n, i in enumerate(parts):
             if i in self.table:
                 parts[n] = self.table[i]
@@ -149,24 +121,15 @@ class CommeCyNormalizer:
             d = dediacritic(i)
             if d in self.table_dedia:
                 parts[n] = self.table_dedia[d]
-
-        # join everything
         return "-".join(parts)
 
-    def __call__(self, doc) -> None:
-        """Normalize a Doc.
-
-        Args:
-            doc (Doc)
-
-        Returns (Doc)
-        """
-
+    def __call__(self, doc: Doc) -> Doc:
+        """Normalize a Doc."""
         for token in doc:
             token.norm_ = self.normalize(token.text)
         return doc
 
-    def to_disk(self, path, exclude=tuple()):
+    def to_disk(self, path: Path, exclude: tuple = tuple()) -> None:
         """Save the component data to disk."""
 
         path = spacy.util.ensure_path(path)
@@ -178,7 +141,7 @@ class CommeCyNormalizer:
             with idx_path.open("wb") as f:
                 f.write(getattr(self, i).to_bytes())
 
-    def from_disk(self, path, *, exclude=tuple()):
+    def from_disk(self, path: Path, *, exclude: tuple = tuple()) -> None:
         """Load the component data from disk."""
 
         for i in ("table", "table_dedia"):
@@ -190,5 +153,5 @@ class CommeCyNormalizer:
 
 
 @spacy.Language.factory("commecy_normalizer")
-def create_commecy_normalizer(nlp, name):
+def create_commecy_normalizer(nlp: Language, name: str) -> CommeCyNormalizer:
     return CommeCyNormalizer(nlp, name)
